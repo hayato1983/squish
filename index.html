@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>写真圧縮ツール</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Noto+Sans+JP:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0f0f11;
+    --surface: #1a1a1f;
+    --surface2: #222228;
+    --accent: #c8f050;
+    --accent2: #50f0c8;
+    --text: #e8e8ec;
+    --muted: #6b6b78;
+    --border: #2e2e38;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+    padding: 32px 24px 64px;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 2rem;
+    color: var(--accent);
+    letter-spacing: -1px;
+  }
+
+  .subtitle {
+    font-size: 0.8rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  .control-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 220px;
+  }
+
+  label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  input[type="number"] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    width: 90px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    transition: border-color 0.2s;
+  }
+  input[type="number"]:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  select:focus { outline: none; border-color: var(--accent); }
+
+  /* Drop zone */
+  .dropzone {
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    padding: 48px 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.25s, background 0.25s;
+    margin-bottom: 36px;
+    position: relative;
+    overflow: hidden;
+  }
+  .dropzone::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(200,240,80,0.05) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .dropzone:hover, .dropzone.drag-over {
+    border-color: var(--accent);
+    background: rgba(200,240,80,0.03);
+  }
+  .dropzone-icon {
+    font-size: 3rem;
+    margin-bottom: 12px;
+    opacity: 0.5;
+  }
+  .dropzone-text {
+    font-size: 1rem;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .dropzone-sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+    opacity: 0.6;
+  }
+  .dropzone-btn {
+    display: inline-block;
+    margin-top: 16px;
+    padding: 10px 28px;
+    background: var(--accent);
+    color: #0f0f11;
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .dropzone-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+  #fileInput { display: none; }
+
+  /* Results grid */
+  .results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .results-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.85rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .clear-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .clear-btn:hover { border-color: #e05050; color: #e05050; }
+
+  .cards {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-body {
+    display: flex;
+    gap: 0;
+  }
+
+  .img-panel {
+    flex: 1;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-right: 1px solid var(--border);
+  }
+  .img-panel:last-child { border-right: none; }
+
+  .panel-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .img-wrap {
+    background: #111114;
+    border-radius: 8px;
+    overflow: hidden;
+    aspect-ratio: 16/9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .size-badge {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+  .size-badge.original { color: var(--muted); }
+  .size-badge.compressed { color: var(--accent); }
+
+  .reduction-badge {
+    font-size: 0.72rem;
+    padding: 2px 8px;
+    background: rgba(200,240,80,0.12);
+    color: var(--accent);
+    border-radius: 999px;
+    display: inline-block;
+  }
+
+  .card-footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    background: var(--surface2);
+  }
+
+  .filename {
+    flex: 1;
+    font-size: 0.78rem;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .action-btn {
+    padding: 7px 16px;
+    border-radius: 7px;
+    font-size: 0.75rem;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: opacity 0.2s, transform 0.15s;
+    letter-spacing: 0.04em;
+  }
+  .action-btn:hover { opacity: 0.8; transform: translateY(-1px); }
+  .btn-dl {
+    background: var(--accent);
+    color: #0f0f11;
+  }
+  .btn-copy {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--accent2);
+  }
+  .btn-copy.copied {
+    background: rgba(80,240,200,0.1);
+    border-color: var(--accent2);
+  }
+
+  .processing {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* modal */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    background: var(--accent);
+    color: #0f0f11;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none;
+    z-index: 999;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* Drive converter */
+  .drive-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 28px;
+  }
+  .drive-section-title {
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .drive-section-title::before {
+    content: '';
+    display: inline-block;
+    width: 8px; height: 8px;
+    background: var(--accent2);
+    border-radius: 50%;
+  }
+  .drive-input-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .drive-input-row input[type="text"] {
+    flex: 1;
+    min-width: 200px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 9px 14px;
+    font-size: 0.82rem;
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: border-color 0.2s;
+  }
+  .drive-input-row input[type="text"]::placeholder { color: var(--muted); opacity: 0.6; }
+  .drive-input-row input[type="text"]:focus { outline: none; border-color: var(--accent2); }
+  .btn-drive-convert {
+    padding: 9px 20px;
+    background: var(--accent2);
+    color: #0f0f11;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+    white-space: nowrap;
+  }
+  .btn-drive-convert:hover { opacity: 0.85; transform: translateY(-1px); }
+  .drive-result {
+    margin-top: 12px;
+    display: none;
+  }
+  .drive-result-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.78rem;
+    color: var(--accent2);
+    font-family: monospace;
+    word-break: break-all;
+    margin-bottom: 8px;
+  }
+  .drive-result-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .btn-drive-copy {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--accent2);
+    transition: opacity 0.2s;
+  }
+  .btn-drive-copy:hover { opacity: 0.75; }
+  .drive-error {
+    margin-top: 8px;
+    font-size: 0.75rem;
+    color: #e05050;
+    display: none;
+  }
+
+  @media (max-width: 600px) {
+    .card-body { flex-direction: column; }
+    .img-panel { border-right: none; border-bottom: 1px solid var(--border); }
+    .img-panel:last-child { border-bottom: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SQUISH</h1>
+  <span class="subtitle">写真圧縮ツール</span>
+</header>
+
+<div class="controls">
+  <div class="control-group">
+    <label>目標サイズ</label>
+    <input type="number" id="targetSize" value="200" min="10" max="10000">
+    <select id="sizeUnit">
+      <option value="kb">KB</option>
+      <option value="mb">MB</option>
+    </select>
+  </div>
+  <div class="control-group">
+    <label>出力形式</label>
+    <select id="outputFormat">
+      <option value="jpeg">JPEG</option>
+      <option value="webp">WebP</option>
+      <option value="png">PNG</option>
+    </select>
+  </div>
+  <div class="control-group">
+    <label>imgタグ width</label>
+    <input type="number" id="imgWidth" placeholder="省略可" min="50" max="3000" style="width:100px;">
+    <label style="opacity:0.5">px</label>
+  </div>
+</div>
+
+<!-- Google Drive URL Converter -->
+<div class="drive-section">
+  <div class="drive-section-title">Google Drive URL → Obsidian iframeタグ 変換</div>
+  <div class="drive-input-row">
+    <input type="text" id="driveUrl" placeholder="Google DriveのリンクをここにペーストしてConvertクリック">
+    <input type="number" id="driveWidth" placeholder="width" min="50" max="3000" style="width:90px;flex:none;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:0.82rem;font-family:'Syne',sans-serif;font-weight:700;">
+    <input type="number" id="driveHeight" placeholder="height" min="50" max="3000" style="width:90px;flex:none;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:0.82rem;font-family:'Syne',sans-serif;font-weight:700;">
+    <button class="btn-drive-convert" onclick="convertDriveUrl()">Convert</button>
+  </div>
+  <div style="font-size:0.7rem;color:var(--muted);margin-top:6px;opacity:0.7;">width / height は省略すると 640 × 480 になります</div>
+  <div class="drive-error" id="driveError">⚠ Google DriveのURLが見つかりませんでした。共有リンクを確認してください。</div>
+  <div class="drive-result" id="driveResult">
+    <div class="drive-result-box" id="driveResultBox"></div>
+    <div class="drive-result-actions">
+      <button class="btn-drive-copy" onclick="copyDriveResult(this, 'img')">iframeタグをコピー</button>
+      <button class="btn-drive-copy" onclick="copyDriveResult(this, 'url')">URLだけコピー</button>
+    </div>
+  </div>
+</div>
+
+<div class="dropzone" id="dropzone">
+  <div class="dropzone-icon">📷</div>
+  <div class="dropzone-text">写真をここにドロップ</div>
+  <div class="dropzone-sub">JPG / PNG / WebP / HEIC 対応 · 複数枚OK</div>
+  <div class="dropzone-btn" onclick="document.getElementById('fileInput').click()">ファイルを選ぶ</div>
+  <input type="file" id="fileInput" accept="image/*" multiple>
+</div>
+
+<div id="resultsArea" style="display:none">
+  <div class="results-header">
+    <span class="results-title">処理結果</span>
+    <button class="clear-btn" onclick="clearAll()">すべてクリア</button>
+  </div>
+  <div class="cards" id="cards"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const cards = document.getElementById('cards');
+const resultsArea = document.getElementById('resultsArea');
+
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('drag-over');
+  processFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change', () => processFiles(fileInput.files));
+
+function processFiles(files) {
+  if (!files.length) return;
+  resultsArea.style.display = 'block';
+  [...files].forEach(processFile);
+  fileInput.value = '';
+}
+
+async function processFile(file) {
+  if (!file.type.startsWith('image/')) return;
+
+  const id = 'card-' + Date.now() + Math.random().toString(36).slice(2);
+  const placeholder = document.createElement('div');
+  placeholder.className = 'card';
+  placeholder.id = id;
+  placeholder.innerHTML = `<div class="processing"><div class="spinner"></div>${file.name} を処理中...</div>`;
+  cards.prepend(placeholder);
+
+  const originalURL = URL.createObjectURL(file);
+  const originalSize = file.size;
+
+  const targetKB = getTargetKB();
+  const format = document.getElementById('outputFormat').value;
+  const mime = format === 'jpeg' ? 'image/jpeg' : format === 'webp' ? 'image/webp' : 'image/png';
+
+  const compressedBlob = await compressToTarget(file, targetKB * 1024, mime);
+  const compressedURL = URL.createObjectURL(compressedBlob);
+  const compressedSize = compressedBlob.size;
+  const reduction = ((1 - compressedSize / originalSize) * 100).toFixed(1);
+  const ext = format === 'jpeg' ? 'jpg' : format;
+  const newName = file.name.replace(/\.[^.]+$/, '') + '_sq.' + ext;
+
+  const card = document.getElementById(id);
+  card.innerHTML = `
+    <div class="card-body">
+      <div class="img-panel">
+        <div class="panel-label">元画像</div>
+        <div class="img-wrap"><img src="${originalURL}" loading="lazy"></div>
+        <div class="size-badge original">${formatSize(originalSize)}</div>
+      </div>
+      <div class="img-panel">
+        <div class="panel-label">圧縮後 <span class="reduction-badge">▼${reduction}%</span></div>
+        <div class="img-wrap"><img src="${compressedURL}" loading="lazy"></div>
+        <div class="size-badge compressed">${formatSize(compressedSize)}</div>
+      </div>
+    </div>
+    <div class="card-footer">
+      <span class="filename">${newName}</span>
+      <button class="action-btn btn-copy" onclick="copyImgTag(this, '${newName}')">img src コピー</button>
+      <button class="action-btn btn-dl" onclick="downloadBlob('${compressedURL}', '${newName}')">ダウンロード</button>
+    </div>
+  `;
+}
+
+async function compressToTarget(file, targetBytes, mime) {
+  const img = await loadImage(file);
+  const canvas = document.createElement('canvas');
+
+  // If PNG (lossless), just resize if oversized, no quality knob
+  if (mime === 'image/png') {
+    let scale = 1;
+    let blob = await canvasToBlob(canvas, img, scale, mime, 1);
+    while (blob.size > targetBytes && scale > 0.1) {
+      scale -= 0.1;
+      blob = await canvasToBlob(canvas, img, scale, mime, 1);
+    }
+    return blob;
+  }
+
+  // Binary search on quality
+  let lo = 0.05, hi = 0.95, best = null;
+  for (let i = 0; i < 12; i++) {
+    const mid = (lo + hi) / 2;
+    const blob = await canvasToBlob(canvas, img, 1, mime, mid);
+    if (blob.size <= targetBytes) {
+      best = blob;
+      lo = mid;
+    } else {
+      hi = mid;
+    }
+    if (hi - lo < 0.02) break;
+  }
+
+  // If still too big, also scale down resolution
+  if (!best || best.size > targetBytes) {
+    let scale = 0.9;
+    while (scale > 0.2) {
+      const blob = await canvasToBlob(canvas, img, scale, mime, 0.5);
+      if (blob.size <= targetBytes) return blob;
+      scale -= 0.1;
+    }
+    return await canvasToBlob(canvas, img, 0.2, mime, 0.3);
+  }
+  return best;
+}
+
+function canvasToBlob(canvas, img, scale, mime, quality) {
+  canvas.width = Math.round(img.width * scale);
+  canvas.height = Math.round(img.height * scale);
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return new Promise(resolve => canvas.toBlob(resolve, mime, quality));
+}
+
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+function getTargetKB() {
+  const val = parseFloat(document.getElementById('targetSize').value) || 200;
+  const unit = document.getElementById('sizeUnit').value;
+  return unit === 'mb' ? val * 1024 : val;
+}
+
+function formatSize(bytes) {
+  if (bytes >= 1048576) return (bytes / 1048576).toFixed(2) + ' MB';
+  return (bytes / 1024).toFixed(1) + ' KB';
+}
+
+function downloadBlob(url, name) {
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  a.click();
+}
+
+function copyImgTag(btn, name) {
+  const width = document.getElementById('imgWidth').value.trim();
+  const widthAttr = width ? ` width="${width}"` : '';
+  const tag = `<img src="${name}"${widthAttr}>`;
+  navigator.clipboard.writeText(tag).then(() => {
+    btn.textContent = 'コピーした！';
+    btn.classList.add('copied');
+    showToast('クリップボードにコピーしました');
+    setTimeout(() => { btn.textContent = 'img src コピー'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function clearAll() {
+  cards.innerHTML = '';
+  resultsArea.style.display = 'none';
+}
+
+let lastConvertedUrl = '';
+
+function convertDriveUrl() {
+  const input = document.getElementById('driveUrl').value.trim();
+  const resultArea = document.getElementById('driveResult');
+  const errorArea = document.getElementById('driveError');
+  const resultBox = document.getElementById('driveResultBox');
+  resultArea.style.display = 'none';
+  errorArea.style.display = 'none';
+
+  // Extract file ID from various Drive URL formats
+  const patterns = [
+    /\/file\/d\/([a-zA-Z0-9_-]+)/,
+    /thumbnail\?id=([a-zA-Z0-9_-]+)/,
+    /[?&]id=([a-zA-Z0-9_-]+)/,
+    /\/d\/([a-zA-Z0-9_-]+)/,
+  ];
+  let fileId = null;
+  for (const p of patterns) {
+    const m = input.match(p);
+    if (m) { fileId = m[1]; break; }
+  }
+
+  if (!fileId) {
+    errorArea.style.display = 'block';
+    return;
+  }
+
+  lastConvertedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+  const width = document.getElementById('driveWidth').value.trim() || '640';
+  const height = document.getElementById('driveHeight') ? document.getElementById('driveHeight').value.trim() || '480' : '480';
+  const tag = `<iframe src="${lastConvertedUrl}" width="${width}" height="${height}" allow="autoplay"></iframe>`;
+  resultBox.textContent = tag;
+  resultArea.style.display = 'block';
+}
+
+function copyDriveResult(btn, mode) {
+  const width = document.getElementById('driveWidth').value.trim() || '640';
+  const height = document.getElementById('driveHeight') ? document.getElementById('driveHeight').value.trim() || '480' : '480';
+  const tag = `<iframe src="${lastConvertedUrl}" width="${width}" height="${height}" allow="autoplay"></iframe>`;
+  const text = mode === 'img' ? tag : lastConvertedUrl;
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'コピーした！';
+    showToast('クリップボードにコピーしました');
+    setTimeout(() => btn.textContent = orig, 2000);
+  });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+</script>
+</body>
+</html>
