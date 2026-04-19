@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>AIフラッシュカード</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a1628;--deep:#061020;--panel:#0f2240;--panel2:#162848;
+  --border:#1e3a5f;--aqua:#00c8e0;--aqua2:#00eeff;
+  --gold:#ffd060;--coral:#ff5566;--green:#00d890;
+  --text:#d8f0ff;--text2:#5a8aaf;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Zen Kaku Gothic New',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 30%,rgba(0,200,224,0.05) 0%,transparent 60%),radial-gradient(ellipse at 80% 70%,rgba(0,80,180,0.07) 0%,transparent 50%);pointer-events:none;z-index:0;}
+
+/* HEADER */
+header{position:sticky;top:0;z-index:100;background:rgba(6,16,32,0.97);border-bottom:1px solid rgba(0,200,224,0.15);padding:10px 16px;display:flex;align-items:center;gap:12px;backdrop-filter:blur(12px);}
+.logo{display:flex;align-items:center;gap:10px;flex:1;}
+.logo-icon{width:38px;height:38px;background:linear-gradient(135deg,#00a8c0,#0050a0);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 0 16px rgba(0,168,192,0.4);flex-shrink:0;}
+.logo h1{font-size:13px;font-weight:700;line-height:1.2;}
+.logo p{font-size:10px;color:var(--aqua);font-family:'Share Tech Mono',monospace;}
+.hdr-pill{background:rgba(0,200,224,0.08);border:1px solid rgba(0,200,224,0.2);border-radius:20px;padding:4px 10px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--aqua);}
+
+/* TABS */
+.tabs{position:sticky;top:59px;z-index:99;display:flex;background:var(--deep);border-bottom:1px solid rgba(0,200,224,0.12);}
+.tab{flex:1;padding:10px 4px;font-size:11px;font-weight:600;font-family:'Zen Kaku Gothic New',sans-serif;color:var(--text2);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all 0.2s;}
+.tab.active{color:var(--aqua);border-bottom-color:var(--aqua);}
+
+main{position:relative;z-index:1;padding:16px 16px 100px;max-width:620px;margin:0 auto;}
+.view{display:none;}.view.active{display:block;}
+
+/* ===== HOME ===== */
+.hero{background:linear-gradient(135deg,#0f2240,#061828);border:1px solid rgba(0,200,224,0.18);border-radius:18px;padding:22px 18px;margin-bottom:14px;position:relative;overflow:hidden;}
+.hero::after{content:'🤿';position:absolute;right:-8px;bottom:-8px;font-size:72px;opacity:0.06;}
+.hero h2{font-size:20px;font-weight:900;line-height:1.3;margin-bottom:6px;background:linear-gradient(135deg,var(--aqua2),#60c8ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.hero p{font-size:12px;color:var(--text2);line-height:1.7;}
+.prog-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.prog-card{background:var(--panel);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px 8px;text-align:center;}
+.prog-num{font-size:26px;font-weight:900;font-family:'Share Tech Mono',monospace;line-height:1;margin-bottom:3px;}
+.prog-num.c{color:var(--green);}.prog-num.u{color:var(--gold);}.prog-num.w{color:var(--coral);}
+.prog-lbl{font-size:10px;color:var(--text2);}
+.cat-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+.cat-item{background:var(--panel);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.18s;}
+.cat-item:active{transform:scale(0.98);}
+.cat-item:hover{border-color:rgba(0,200,224,0.3);}
+.cat-ico{font-size:22px;flex-shrink:0;}
+.cat-inf{flex:1;}
+.cat-name{font-size:13px;font-weight:700;margin-bottom:2px;}
+.cat-meta{font-size:11px;color:var(--text2);}
+.cat-bar{height:3px;background:rgba(255,255,255,0.06);border-radius:2px;margin-top:5px;overflow:hidden;}
+.cat-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--aqua),var(--green));transition:width 0.5s;}
+.home-btns{display:flex;flex-direction:column;gap:8px;}
+.btn-main{width:100%;padding:15px;background:linear-gradient(135deg,#0060c0,#00a0d0);border:none;border-radius:12px;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:'Zen Kaku Gothic New',sans-serif;box-shadow:0 4px 20px rgba(0,140,200,0.3);}
+.btn-main:active{transform:scale(0.98);}
+.btn-sub{width:100%;padding:12px;background:transparent;border:1.5px solid rgba(0,200,224,0.3);border-radius:12px;color:var(--aqua);font-size:13px;font-weight:700;cursor:pointer;font-family:'Zen Kaku Gothic New',sans-serif;}
+.btn-sub:active{transform:scale(0.98);}
+.btn-warn{width:100%;padding:12px;background:rgba(255,85,102,0.08);border:1.5px solid rgba(255,85,102,0.3);border-radius:12px;color:var(--coral);font-size:13px;font-weight:700;cursor:pointer;font-family:'Zen Kaku Gothic New',sans-serif;}
+
+/* ===== ADD VIEW ===== */
+.mode-select{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.mode-btn{padding:16px 10px;background:var(--panel);border:2px solid var(--border);border-radius:14px;color:var(--text);font-family:'Zen Kaku Gothic New',sans-serif;font-size:13px;font-weight:700;cursor:pointer;text-align:center;transition:all 0.2s;line-height:1.4;}
+.mode-btn.active{border-color:var(--aqua);background:rgba(0,200,224,0.08);color:var(--aqua);}
+.mode-btn:active{transform:scale(0.97);}
+.mode-icon{font-size:28px;display:block;margin-bottom:6px;}
+
+.section-label{font-size:11px;color:var(--aqua);font-family:'Share Tech Mono',monospace;margin-bottom:8px;}
+.text-area{width:100%;background:var(--deep);border:1.5px solid var(--border);border-radius:12px;padding:14px;color:var(--text);font-family:'Zen Kaku Gothic New',sans-serif;font-size:13px;line-height:1.7;outline:none;resize:vertical;min-height:200px;margin-bottom:12px;}
+.text-area:focus{border-color:var(--aqua);}
+.text-area::placeholder{color:var(--text2);}
+
+.cat-input{width:100%;background:var(--deep);border:1.5px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'Zen Kaku Gothic New',sans-serif;font-size:13px;outline:none;margin-bottom:12px;}
+.cat-input:focus{border-color:var(--aqua);}
+.cat-input::placeholder{color:var(--text2);}
+
+.hint-box{background:rgba(0,200,224,0.05);border:1px solid rgba(0,200,224,0.15);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.7;}
+.hint-box strong{color:var(--aqua);}
+
+.generate-btn{width:100%;padding:16px;background:linear-gradient(135deg,#0060c0,#00a0d0);border:none;border-radius:12px;color:white;font-size:15px;font-weight:700;cursor:pointer;font-family:'Zen Kaku Gothic New',sans-serif;box-shadow:0 4px 20px rgba(0,140,200,0.3);}
+.generate-btn:active{transform:scale(0.98);}
+.generate-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+
+/* 処理中 */
+.processing{display:none;text-align:center;padding:32px 16px;}
+.processing.show{display:block;}
+.spinner{width:56px;height:56px;border:4px solid rgba(0,200,224,0.15);border-top-color:var(--aqua);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.proc-title{font-size:17px;font-weight:700;margin-bottom:6px;}
+.proc-sub{font-size:12px;color:var(--text2);line-height:1.7;}
+.proc-log{background:var(--deep);border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:14px;text-align:left;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--aqua);max-height:160px;overflow-y:auto;line-height:1.8;}
+
+/* ===== STUDY ===== */
+.progress-wrap{margin-bottom:14px;}
+.progress-info{display:flex;justify-content:space-between;margin-bottom:5px;}
+.progress-label{font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--text2);}
+.progress-num{font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--aqua);}
+.progress-bar{height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--aqua),var(--aqua2));transition:width 0.4s;box-shadow:0 0 8px rgba(0,200,224,0.5);}
+.cat-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:rgba(0,200,224,0.07);border:1px solid rgba(0,200,224,0.2);border-radius:20px;font-size:11px;color:var(--aqua);margin-bottom:14px;font-family:'Share Tech Mono',monospace;}
+
+/* カード */
+.card-scene{perspective:1000px;margin-bottom:18px;}
+.card-wrap{position:relative;width:100%;min-height:280px;transform-style:preserve-3d;transition:transform 0.5s cubic-bezier(0.4,0,0.2,1);cursor:pointer;}
+.card-wrap.flipped{transform:rotateY(180deg);}
+.card-face{position:absolute;width:100%;min-height:280px;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:18px;padding:22px 18px;display:flex;flex-direction:column;}
+.card-front{background:var(--panel);border:1.5px solid rgba(0,200,224,0.2);box-shadow:0 8px 30px rgba(0,0,0,0.4);}
+.card-front::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--aqua),var(--aqua2),transparent);border-radius:18px 18px 0 0;}
+.card-back{background:#082018;border:1.5px solid rgba(0,220,140,0.25);box-shadow:0 8px 30px rgba(0,0,0,0.4);transform:rotateY(180deg);}
+.card-back::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--green),#00ffbb,transparent);border-radius:18px 18px 0 0;}
+/* 要約カード（青系） */
+.card-front.summary-card{border-color:rgba(255,208,96,0.25);}
+.card-front.summary-card::before{background:linear-gradient(90deg,var(--gold),#ffaa00,transparent);}
+.card-back.summary-card{background:#1a1200;border-color:rgba(255,208,96,0.25);}
+.card-back.summary-card::before{background:linear-gradient(90deg,var(--gold),#ffaa00,transparent);}
+
+.card-type{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.cdot{width:6px;height:6px;border-radius:50%;background:var(--aqua);box-shadow:0 0 6px var(--aqua);}
+.card-back .cdot{background:var(--green);box-shadow:0 0 6px var(--green);}
+.summary-card .cdot{background:var(--gold);box-shadow:0 0 6px var(--gold);}
+.card-q{font-size:15px;font-weight:700;line-height:1.7;flex:1;margin-bottom:14px;}
+.choices{display:flex;flex-direction:column;gap:5px;}
+.choice-item{display:flex;align-items:flex-start;gap:8px;padding:7px 10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:7px;font-size:12px;line-height:1.5;}
+.choice-item.correct{background:rgba(0,216,144,0.1);border-color:rgba(0,216,144,0.35);color:var(--green);}
+.choice-num{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2);flex-shrink:0;min-width:18px;margin-top:1px;}
+.choice-item.correct .choice-num{color:var(--green);}
+.tap-hint{text-align:center;font-size:11px;color:var(--text2);margin-top:10px;animation:pulse 2.5s infinite;}
+@keyframes pulse{0%,100%{opacity:0.4}50%{opacity:1}}
+.answer-label{font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--green);margin-bottom:6px;}
+.answer-label.gold{color:var(--gold);}
+.answer-main{font-size:22px;font-weight:900;color:var(--green);margin-bottom:10px;text-shadow:0 0 20px rgba(0,216,144,0.4);line-height:1.5;}
+.answer-main.gold{color:var(--gold);text-shadow:0 0 20px rgba(255,208,96,0.4);font-size:16px;}
+.explanation{font-size:12px;line-height:1.8;color:#99ccbb;background:rgba(0,0,0,0.2);border-radius:10px;padding:12px;border-left:3px solid rgba(0,216,144,0.35);flex:1;}
+.explanation.gold{color:#ccbb88;border-left-color:rgba(255,208,96,0.35);}
+
+/* 評価ボタン */
+.rating-section{display:none;flex-direction:column;gap:8px;}
+.rating-section.show{display:flex;animation:fadein 0.3s ease;}
+.rating-label{text-align:center;font-size:12px;color:var(--text2);}
+.rating-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.rating-btn{padding:13px 6px;border-radius:11px;border:1.5px solid;font-family:'Zen Kaku Gothic New',sans-serif;font-size:12px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;transition:all 0.18s;}
+.rating-btn:active{transform:scale(0.95);}
+.btn-wrong{background:rgba(255,85,102,0.1);border-color:rgba(255,85,102,0.4);color:var(--coral);}
+.btn-unsure{background:rgba(255,208,96,0.08);border-color:rgba(255,208,96,0.35);color:var(--gold);}
+.btn-ok{background:rgba(0,216,144,0.1);border-color:rgba(0,216,144,0.4);color:var(--green);}
+
+/* STATS */
+.result-box{background:var(--panel);border:1px solid rgba(255,255,255,0.06);border-radius:18px;padding:24px 18px;text-align:center;margin-bottom:14px;}
+.result-emoji{font-size:52px;margin-bottom:10px;}
+.result-title{font-size:22px;font-weight:900;margin-bottom:4px;}
+.result-sub{font-size:12px;color:var(--text2);}
+.score-ring{width:110px;height:110px;margin:16px auto;position:relative;}
+.score-ring svg{transform:rotate(-90deg);}
+.score-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.score-pct{font-size:26px;font-weight:900;font-family:'Share Tech Mono',monospace;color:var(--green);}
+.score-lbl{font-size:9px;color:var(--text2);}
+.action-btn{width:100%;padding:14px;border-radius:11px;font-family:'Zen Kaku Gothic New',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.18s;border:none;margin-bottom:8px;}
+.action-btn:active{transform:scale(0.97);}
+.action-btn.primary{background:linear-gradient(135deg,#0060c0,#00a0d0);color:white;box-shadow:0 4px 16px rgba(0,140,200,0.3);}
+.action-btn.sec{background:var(--panel);color:var(--text);border:1px solid rgba(255,255,255,0.08);}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:100;background:rgba(6,16,32,0.97);border-top:1px solid rgba(0,200,224,0.12);padding:10px 16px;display:flex;gap:8px;align-items:center;backdrop-filter:blur(12px);}
+.nav-btn{flex:1;padding:10px;border-radius:9px;font-family:'Zen Kaku Gothic New',sans-serif;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid rgba(255,255,255,0.08);background:transparent;color:var(--text2);transition:all 0.18s;}
+.nav-btn:disabled{opacity:0.2;cursor:not-allowed;}
+.nav-btn.skip{border-color:rgba(0,200,224,0.3);color:var(--aqua);background:rgba(0,200,224,0.05);}
+@keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.sep{height:1px;background:var(--border);margin:16px 0;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🤿</div>
+    <div>
+      <h1>AI フラッシュカード</h1>
+      <p>POWERED BY GEMINI</p>
+    </div>
+  </div>
+  <div class="hdr-pill">🔥 <span id="streak-num">0</span></div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchView('home')" id="tab-home">🏠 ホーム</button>
+  <button class="tab" onclick="switchView('add')" id="tab-add">➕ 追加</button>
+  <button class="tab" onclick="switchView('study')" id="tab-study">📖 学習</button>
+  <button class="tab" onclick="switchView('stats')" id="tab-stats">📊 記録</button>
+</div>
+
+<main>
+
+  <!-- HOME -->
+  <div class="view active" id="view-home">
+    <div class="hero">
+      <h2>テキストを貼るだけで<br>カードを自動生成</h2>
+      <p>NotebookLM・本・資料のテキストを貼り付けると<br>GeminiAIが自動でフラッシュカードを作成します。<br>問題集も要約カードも両方対応。</p>
+    </div>
+    <div class="prog-grid">
+      <div class="prog-card"><div class="prog-num c" id="h-correct">0</div><div class="prog-lbl">✅ 正解</div></div>
+      <div class="prog-card"><div class="prog-num u" id="h-unsure">0</div><div class="prog-lbl">🤔 あいまい</div></div>
+      <div class="prog-card"><div class="prog-num w" id="h-wrong">0</div><div class="prog-lbl">❌ 要復習</div></div>
+    </div>
+    <div class="cat-list" id="home-cats">
+      <div style="text-align:center;color:var(--text2);padding:20px;font-size:13px;">
+        「➕ 追加」タブからテキストを貼り付けてください
+      </div>
+    </div>
+    <div class="home-btns">
+      <button class="btn-main" onclick="startStudy('all')">🚀 すべてのカードで学習スタート</button>
+      <button class="btn-sub" onclick="startReview()">❌ 間違えた問題を復習</button>
+      <button class="btn-warn" onclick="clearAll()">🗑️ すべてのカードをリセット</button>
+    </div>
+  </div>
+
+  <!-- ADD -->
+  <div class="view" id="view-add">
+
+    <!-- モード選択 -->
+    <div class="section-label">📌 カードの種類を選択</div>
+    <div class="mode-select">
+      <button class="mode-btn active" id="mode-qa" onclick="setMode('qa')">
+        <span class="mode-icon">❓</span>
+        問題集カード<br><span style="font-size:10px;font-weight:400;color:var(--text2)">問題→解答形式</span>
+      </button>
+      <button class="mode-btn" id="mode-summary" onclick="setMode('summary')">
+        <span class="mode-icon">📖</span>
+        要約ポイントカード<br><span style="font-size:10px;font-weight:400;color:var(--text2)">重要点を抽出</span>
+      </button>
+    </div>
+
+    <!-- カテゴリ入力 -->
+    <div class="section-label">📂 カテゴリ名（任意）</div>
+    <input type="text" class="cat-input" id="cat-input" placeholder="例：圧力の基礎　／　第1章　／　マーケティング基礎">
+
+    <!-- ヒント -->
+    <div class="hint-box" id="hint-box">
+      <strong>💡 使い方</strong><br>
+      NotebookLMで出力したテキスト、またはPDFからコピーしたテキストをそのまま貼り付けてください。<br>
+      GeminiAIが自動で問題と解答を認識してカードを作成します。
+    </div>
+
+    <!-- テキスト入力 -->
+    <div class="section-label">📝 テキストを貼り付け</div>
+    <textarea class="text-area" id="paste-text" placeholder="ここにテキストを貼り付けてください...
+
+【問題集の場合】
+NotebookLMで出力した問題テキストをそのまま貼り付けてください。
+
+【本・資料の場合】
+まとめたい本や資料のテキストを貼り付けてください。重要ポイントを自動で抽出してカードにします。"></textarea>
+
+    <button class="generate-btn" id="gen-btn" onclick="generateCards()">
+      🤖 AIでカードを自動生成
+    </button>
+
+    <div class="sep"></div>
+
+    <!-- 処理中 -->
+    <div class="processing" id="processing">
+      <div class="spinner"></div>
+      <div class="proc-title" id="proc-title">AIがカードを生成中...</div>
+      <div class="proc-sub">しばらくお待ちください</div>
+      <div class="proc-log" id="proc-log"></div>
+    </div>
+
+  </div>
+
+  <!-- STUDY -->
+  <div class="view" id="view-study">
+    <div class="progress-wrap">
+      <div class="progress-info">
+        <span class="progress-label" id="prog-label">学習中</span>
+        <span class="progress-num" id="prog-num">0 / 0</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+    </div>
+    <div class="cat-badge" id="study-cat">📚 カテゴリ</div>
+    <div class="card-scene">
+      <div class="card-wrap" id="card-wrap" onclick="flipCard()">
+        <div class="card-face card-front" id="cf">
+          <div class="card-type"><span class="cdot" id="cdot-f"></span><span id="card-type-label">問題</span></div>
+          <div class="card-q" id="card-q">カードを追加してください</div>
+          <div class="choices" id="choices"></div>
+          <div class="tap-hint">👆 タップして答えを確認</div>
+        </div>
+        <div class="card-face card-back" id="cb">
+          <div class="card-type"><span class="cdot" id="cdot-b"></span>解答・解説</div>
+          <div class="answer-label" id="answer-label">✅ 正解</div>
+          <div class="answer-main" id="answer-main">—</div>
+          <div class="explanation" id="explanation">解説がここに表示されます。</div>
+        </div>
+      </div>
+    </div>
+    <div class="rating-section" id="rating-section">
+      <div class="rating-label">この問題、どうでしたか？</div>
+      <div class="rating-btns">
+        <button class="rating-btn btn-wrong" onclick="rate('wrong')">❌<br>わからない<br><span style="font-size:10px;font-weight:400">また出題</span></button>
+        <button class="rating-btn btn-unsure" onclick="rate('unsure')">🤔<br>あいまい<br><span style="font-size:10px;font-weight:400">後でまた</span></button>
+        <button class="rating-btn btn-ok" onclick="rate('correct')">✅<br>わかった！<br><span style="font-size:10px;font-weight:400">次へ進む</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="view" id="view-stats">
+    <div id="stats-content"></div>
+  </div>
+
+</main>
+
+<div class="bottom-nav" id="bottom-nav" style="display:none">
+  <button class="nav-btn" id="btn-prev" onclick="prevCard()">◀ 前へ</button>
+  <button class="nav-btn skip" onclick="skipCard()">スキップ →</button>
+</div>
+
+<script>
+const API_KEY = 'AIzaSyD0tPm4ZJLZ-jdw5EHNfbo1QDVYYDvGQYE';
+const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + API_KEY;
+
+let CARDS = [];
+let ratings = {};
+let streak = 0;
+let deck = [], deckIdx = 0, isFlipped = false;
+let currentMode = 'qa';
+
+// =============================================
+// モード切替
+// =============================================
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('mode-qa').classList.toggle('active', mode === 'qa');
+  document.getElementById('mode-summary').classList.toggle('active', mode === 'summary');
+
+  const hint = document.getElementById('hint-box');
+  const ta = document.getElementById('paste-text');
+
+  if (mode === 'qa') {
+    hint.innerHTML = `<strong>💡 問題集カードの使い方</strong><br>
+NotebookLMで出力した問題テキスト、またはPDFからコピーした問題文をそのまま貼り付けてください。<br>
+GeminiAIが問題・選択肢・解答・解説を自動で認識してカードを作成します。`;
+    ta.placeholder = `ここに問題テキストを貼り付けてください...
+
+例）
+確認問題1　圧力に関し、次のうち誤っているものはどれか。
+(1) 潜水業務において使用される圧力計には、ゲージ圧力が表示される。
+(2) 水深20mで潜水時に受ける圧力は約0.3MPaとなる。
+...
+解説：パスカルの原理によって...【答】(4)`;
+  } else {
+    hint.innerHTML = `<strong>💡 要約ポイントカードの使い方</strong><br>
+本・資料・ノートのテキストを貼り付けてください。<br>
+GeminiAIが重要ポイントを自動で抽出し「キーワード → 説明」形式のカードを作成します。`;
+    ta.placeholder = `ここに本や資料のテキストを貼り付けてください...
+
+例）
+第1章　ボイルの法則
+ボイルの法則は「気体の体積Vは圧力Pに反比例して変化する」というもので、
+言い換えるとPV＝k（一定）として表せます。
+水深10mでは2気圧になるため、体積は水面上の1/2になります...`;
+  }
+}
+
+// =============================================
+// カード生成
+// =============================================
+async function generateCards() {
+  const text = document.getElementById('paste-text').value.trim();
+  if (!text) { alert('テキストを貼り付けてください'); return; }
+
+  const cat = document.getElementById('cat-input').value.trim() || (currentMode === 'qa' ? '問題集' : '要約メモ');
+
+  // UI切替
+  document.getElementById('gen-btn').disabled = true;
+  const proc = document.getElementById('processing');
+  proc.classList.add('show');
+  const log = document.getElementById('proc-log');
+  const addLog = msg => { log.innerHTML += msg + '<br>'; log.scrollTop = log.scrollHeight; };
+
+  document.getElementById('proc-title').textContent = currentMode === 'qa' ? '問題を解析中...' : '重要ポイントを抽出中...';
+
+  addLog('🤖 GeminiAIに送信中...');
+
+  let prompt;
+  if (currentMode === 'qa') {
+    prompt = `以下のテキストから問題と解答を抽出して、JSON配列形式で出力してください。
+
+テキスト：
+${text}
+
+出力形式（JSONのみ、他のテキスト不要）：
+[
+  {
+    "type": "qa",
+    "cat": "${cat}",
+    "q": "問題文",
+    "choices": ["選択肢1", "選択肢2", "選択肢3", "選択肢4", "選択肢5"],
+    "answer": 正解番号(1〜5の整数),
+    "explanation": "解説文"
+  }
+]
+
+注意：
+- 選択肢の(1)(2)などの番号はchoicesに含めない
+- 4択の場合はchoicesを4つにする
+- 正誤問題（○×）の場合はchoicesを["正しい","誤っている"]にしてanswerを1か2にする
+- JSONのみ出力`;
+  } else {
+    prompt = `以下のテキストから重要なポイントを抽出して、フラッシュカード形式のJSON配列で出力してください。
+
+テキスト：
+${text}
+
+出力形式（JSONのみ、他のテキスト不要）：
+[
+  {
+    "type": "summary",
+    "cat": "${cat}",
+    "q": "キーワードや問い（例：ボイルの法則とは？）",
+    "answer": "簡潔な答え・定義（1〜2文）",
+    "explanation": "詳しい説明・補足・具体例"
+  }
+]
+
+注意：
+- 重要なキーワード・概念・数値を中心に抽出する
+- 1つのカードは1つのポイントに絞る
+- 10〜30枚程度のカードを作成する
+- JSONのみ出力`;
+  }
+
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 16000 }
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || 'APIエラー');
+    }
+
+    const data = await response.json();
+    const resText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    addLog('✅ AI応答受信');
+
+    const jsonMatch = resText.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) throw new Error('カードデータの解析に失敗しました');
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    addLog(`📝 ${parsed.length}枚のカードを生成しました`);
+
+    const iconMap = {
+      '圧力':'💧','ボイル':'📐','気体':'🫧','浮力':'⚖️','ヘルメット':'🪖',
+      'マスク':'🎭','人体':'🫀','潜水病':'🏥','送気':'💨','器具':'🔧',
+      '作業':'⚓','安全':'🛡️','法令':'📋','章':'📖','第':'📖',
+    };
+
+    const newCards = parsed.map((item, i) => {
+      let icon = currentMode === 'summary' ? '📖' : '📚';
+      for (const [k,v] of Object.entries(iconMap)) {
+        if ((item.cat||'').includes(k) || (item.q||'').includes(k)) { icon = v; break; }
+      }
+      return {
+        id: Date.now() + i,
+        type: item.type || currentMode,
+        cat: item.cat || cat,
+        catIcon: icon,
+        q: item.q,
+        choices: item.choices || [],
+        answer: item.answer,
+        explanation: item.explanation || '',
+      };
+    });
+
+    const existing = new Set(CARDS.map(c => c.q));
+    const added = newCards.filter(c => !existing.has(c.q));
+    CARDS = [...CARDS, ...added];
+    saveCards();
+
+    addLog(`🎉 ${added.length}枚を追加！合計${CARDS.length}枚`);
+
+    setTimeout(() => {
+      proc.classList.remove('show');
+      document.getElementById('gen-btn').disabled = false;
+      document.getElementById('paste-text').value = '';
+      log.innerHTML = '';
+      switchView('home');
+      renderHome();
+    }, 1500);
+
+  } catch(e) {
+    addLog(`❌ エラー: ${e.message}`);
+    document.getElementById('gen-btn').disabled = false;
+  }
+}
+
+// =============================================
+// 保存・読込
+// =============================================
+function saveCards() {
+  try {
+    localStorage.setItem('ai_flashcards', JSON.stringify(CARDS));
+    localStorage.setItem('ai_ratings', JSON.stringify(ratings));
+  } catch(e) {}
+}
+
+function loadCards() {
+  try {
+    const c = localStorage.getItem('ai_flashcards');
+    const r = localStorage.getItem('ai_ratings');
+    if (c) CARDS = JSON.parse(c);
+    if (r) ratings = JSON.parse(r);
+  } catch(e) {}
+}
+
+function clearAll() {
+  if (!confirm('すべてのカードと学習記録をリセットしますか？')) return;
+  CARDS = []; ratings = {}; streak = 0;
+  localStorage.removeItem('ai_flashcards');
+  localStorage.removeItem('ai_ratings');
+  renderHome();
+}
+
+// =============================================
+// HOME
+// =============================================
+function renderHome() {
+  const correct = Object.values(ratings).filter(r=>r==='correct').length;
+  const wrong   = Object.values(ratings).filter(r=>r==='wrong').length;
+  const unsure  = Object.values(ratings).filter(r=>r==='unsure').length;
+  document.getElementById('h-correct').textContent = correct;
+  document.getElementById('h-wrong').textContent = wrong;
+  document.getElementById('h-unsure').textContent = unsure;
+  document.getElementById('streak-num').textContent = streak;
+
+  const cats = {};
+  CARDS.forEach(c => {
+    if (!cats[c.cat]) cats[c.cat] = { name:c.cat, icon:c.catIcon, type:c.type, total:0, done:0 };
+    cats[c.cat].total++;
+    if (ratings[c.id]==='correct') cats[c.cat].done++;
+  });
+
+  const listEl = document.getElementById('home-cats');
+  if (CARDS.length === 0) {
+    listEl.innerHTML = `<div style="text-align:center;color:var(--text2);padding:20px;font-size:13px;">
+      「➕ 追加」タブからテキストを貼り付けてください
+    </div>`;
+    return;
+  }
+  listEl.innerHTML = '';
+  Object.entries(cats).forEach(([key, cat]) => {
+    const pct = Math.round(cat.done / cat.total * 100);
+    const typeLabel = cat.type === 'summary' ? '📖 要約' : '❓ 問題';
+    const el = document.createElement('div');
+    el.className = 'cat-item';
+    el.innerHTML = `
+      <span class="cat-ico">${cat.icon}</span>
+      <div class="cat-inf">
+        <div class="cat-name">${cat.name} <span style="font-size:10px;color:var(--text2)">${typeLabel}</span></div>
+        <div class="cat-meta">${cat.total}枚 ／ 習得済 ${cat.done}枚（${pct}%）</div>
+        <div class="cat-bar"><div class="cat-bar-fill" style="width:${pct}%"></div></div>
+      </div>
+      <span style="color:var(--text2);font-size:18px">›</span>`;
+    el.onclick = () => startStudy(key);
+    listEl.appendChild(el);
+  });
+}
+
+// =============================================
+// STUDY
+// =============================================
+function startStudy(cat) {
+  if (CARDS.length === 0) { switchView('add'); return; }
+  let cards = cat==='all' ? [...CARDS] : CARDS.filter(c=>c.cat===cat);
+  const pri = { wrong:0, unsure:1, undefined:2, correct:3 };
+  cards.sort((a,b) => (pri[ratings[a.id]]??2)-(pri[ratings[b.id]]??2));
+  deck = cards; deckIdx = 0;
+  switchView('study'); renderCard();
+}
+
+function renderCard() {
+  const card = deck[deckIdx];
+  if (!card) { showResults(); return; }
+
+  isFlipped = false;
+  document.getElementById('card-wrap').classList.remove('flipped');
+
+  const isSummary = card.type === 'summary';
+  const cf = document.getElementById('cf');
+  const cb = document.getElementById('cb');
+
+  // カードタイプ別スタイル
+  cf.className = 'card-face card-front' + (isSummary ? ' summary-card' : '');
+  cb.className = 'card-face card-back' + (isSummary ? ' summary-card' : '');
+  document.getElementById('card-type-label').textContent = isSummary ? 'ポイント確認' : '問題';
+  document.getElementById('answer-label').className = 'answer-label' + (isSummary ? ' gold' : '');
+  document.getElementById('answer-label').textContent = isSummary ? '📖 ポイント' : '✅ 正解';
+  document.getElementById('answer-main').className = 'answer-main' + (isSummary ? ' gold' : '');
+  document.getElementById('explanation').className = 'explanation' + (isSummary ? ' gold' : '');
+
+  const pct = Math.round(deckIdx/deck.length*100);
+  document.getElementById('prog-fill').style.width = pct+'%';
+  document.getElementById('prog-num').textContent = `${deckIdx+1} / ${deck.length}`;
+  document.getElementById('study-cat').innerHTML = `${card.catIcon} ${card.cat}`;
+  document.getElementById('card-q').textContent = card.q;
+
+  // 選択肢（問題カードのみ）
+  const cl = document.getElementById('choices');
+  cl.innerHTML = '';
+  if (!isSummary && card.choices && card.choices.length > 0) {
+    card.choices.forEach((ch, i) => {
+      const d = document.createElement('div');
+      d.className = 'choice-item'; d.dataset.idx = i;
+      d.innerHTML = `<span class="choice-num">(${i+1})</span><span>${ch}</span>`;
+      cl.appendChild(d);
+    });
+  }
+
+  document.getElementById('answer-main').textContent = isSummary ? (card.answer || '') : `（${card.answer}）`;
+  document.getElementById('explanation').textContent = card.explanation;
+  document.getElementById('rating-section').classList.remove('show');
+  document.getElementById('bottom-nav').style.display = 'flex';
+  document.getElementById('btn-prev').disabled = deckIdx===0;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function flipCard() {
+  if (isFlipped) return;
+  isFlipped = true;
+  const card = deck[deckIdx];
+  document.getElementById('card-wrap').classList.add('flipped');
+  if (card.type !== 'summary') {
+    document.querySelectorAll('.choice-item').forEach((el,i) => {
+      if (i+1===card.answer) el.classList.add('correct');
+    });
+  }
+  setTimeout(()=>document.getElementById('rating-section').classList.add('show'), 420);
+}
+
+function rate(result) {
+  const card = deck[deckIdx];
+  ratings[card.id] = result;
+  if (result==='correct') streak++; else streak=0;
+  document.getElementById('streak-num').textContent = streak;
+  saveCards();
+  deckIdx++;
+  if (deckIdx>=deck.length) showResults(); else renderCard();
+}
+
+function skipCard() { deckIdx++; if(deckIdx>=deck.length) showResults(); else renderCard(); }
+function prevCard() { if(deckIdx>0){deckIdx--;renderCard();} }
+
+// =============================================
+// STATS
+// =============================================
+function showResults() {
+  document.getElementById('bottom-nav').style.display='none';
+  switchView('stats'); renderStats();
+}
+
+function renderStats() {
+  const total=CARDS.length;
+  const correct=Object.values(ratings).filter(r=>r==='correct').length;
+  const wrong=Object.values(ratings).filter(r=>r==='wrong').length;
+  const unsure=Object.values(ratings).filter(r=>r==='unsure').length;
+  const pct=total>0?Math.round(correct/total*100):0;
+  let emoji='🌱',title='まずは慣れていこう！';
+  if(pct>=80){emoji='🎉';title='素晴らしい！';}
+  else if(pct>=60){emoji='💪';title='いい調子！';}
+  else if(pct>=40){emoji='📖';title='もう少し！';}
+  const r=50,circ=2*Math.PI*r,dash=circ*(1-pct/100);
+  document.getElementById('stats-content').innerHTML=`
+    <div class="result-box">
+      <div class="result-emoji">${emoji}</div>
+      <div class="result-title">${title}</div>
+      <div class="result-sub">全${total}枚中 ${correct}枚 習得済み</div>
+      <div class="score-ring">
+        <svg width="110" height="110" viewBox="0 0 110 110">
+          <circle cx="55" cy="55" r="${r}" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="8"/>
+          <circle cx="55" cy="55" r="${r}" fill="none" stroke="url(#g1)" stroke-width="8"
+            stroke-dasharray="${circ}" stroke-dashoffset="${dash}" stroke-linecap="round"/>
+          <defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#00c8e0"/>
+            <stop offset="100%" stop-color="#00d890"/>
+          </linearGradient></defs>
+        </svg>
+        <div class="score-text">
+          <div class="score-pct">${pct}%</div>
+          <div class="score-lbl">習得率</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px;justify-content:center;font-size:12px;color:var(--text2)">
+        <span>✅ ${correct}</span><span>🤔 ${unsure}</span><span>❌ ${wrong}</span>
+      </div>
+    </div>
+    <button class="action-btn primary" onclick="startStudy('all')">🔄 もう一度学習</button>
+    <button class="action-btn sec" onclick="startReview()">❌ 間違えた問題を復習</button>
+    <button class="action-btn sec" onclick="switchView('home')">🏠 ホームへ</button>`;
+}
+
+function startReview() {
+  const r=CARDS.filter(c=>ratings[c.id]==='wrong'||ratings[c.id]==='unsure');
+  if(!r.length){alert('復習が必要なカードはありません！🎉');return;}
+  deck=r;deckIdx=0;switchView('study');renderCard();
+}
+
+// =============================================
+// VIEW SWITCH
+// =============================================
+function switchView(v) {
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.getElementById('tab-'+v).classList.add('active');
+  if(v!=='study') document.getElementById('bottom-nav').style.display='none';
+  if(v==='home') renderHome();
+  if(v==='stats') renderStats();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+loadCards();
+renderHome();
+</script>
+</body>
+</html>
