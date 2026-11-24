@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="クリップ">
+<meta name="theme-color" content="#eef2f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1a1f" media="(prefers-color-scheme: dark)">
+<title>クリップボード</title>
+<style>
+:root{
+  --bg:#eef2f4; --card:#ffffff; --ink:#14232b; --sub:#5d6f78; --line:#d5dee2;
+  --accent:#0b6e8a; --accent-ink:#ffffff; --danger:#b3372e; --pin:#b87a00; --chip:#dfe8ec;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1a1f; --card:#18272e; --ink:#e6eef1; --sub:#92a6af; --line:#2a3c45;
+    --accent:#4cb4d1; --accent-ink:#06222b; --danger:#ef8179; --pin:#f0b73c; --chip:#22343c;
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,"Hiragino Sans","Hiragino Kaku Gothic ProN",sans-serif;
+  font-size:16px;line-height:1.5}
+body{padding-bottom:calc(32px + env(safe-area-inset-bottom,0px))}
+header{position:sticky;top:0;z-index:5;background:var(--bg);
+  padding:calc(10px + env(safe-area-inset-top,0px)) 16px 8px;
+  display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}
+h1{font-size:20px;font-weight:700;margin:0;letter-spacing:.02em}
+.hbtn{display:flex;gap:4px}
+.icon{width:44px;height:44px;border:0;border-radius:12px;background:transparent;color:var(--ink);font-size:22px}
+.icon:active{background:var(--chip)}
+main{max-width:640px;margin:0 auto;padding:14px 16px}
+button{font-family:inherit}
+.primary{width:100%;min-height:56px;border:0;border-radius:14px;background:var(--accent);color:var(--accent-ink);
+  font-size:18px;font-weight:700}
+.primary:active{opacity:.85}
+.manual{margin:10px 0 14px;color:var(--sub);font-size:14px}
+.manual summary{min-height:32px;cursor:pointer}
+.manual textarea{width:100%;min-height:84px;margin:6px 0;padding:10px;border:1px solid var(--line);
+  border-radius:10px;background:var(--card);color:var(--ink);font:inherit;font-size:16px}
+.manual button{min-height:44px;padding:0 18px;border:1px solid var(--accent);border-radius:10px;
+  background:transparent;color:var(--accent);font-weight:600}
+input[type=search],.field input{width:100%;min-height:46px;padding:0 14px;border:1px solid var(--line);
+  border-radius:12px;background:var(--card);color:var(--ink);font:inherit;font-size:16px}
+#tabs{display:flex;gap:8px;overflow-x:auto;padding:12px 0 8px;scrollbar-width:none}
+#tabs::-webkit-scrollbar{display:none}
+#tabs button{flex:none;min-height:38px;padding:0 14px;border:0;border-radius:19px;background:var(--chip);
+  color:var(--sub);font-size:14px;font-weight:600}
+#tabs button.on{background:var(--accent);color:var(--accent-ink)}
+.card{display:flex;gap:8px;margin:10px 0;padding:12px 8px 12px 14px;background:var(--card);
+  border:1px solid var(--line);border-radius:14px}
+.card.pinned{border-left:5px solid var(--pin);padding-left:10px}
+.body{flex:1;min-width:0;cursor:pointer}
+.txt{margin:0;white-space:pre-wrap;word-break:break-word;display:-webkit-box;
+  -webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.txt.url{color:var(--accent);word-break:break-all}
+.thumb{display:block;max-width:100%;max-height:220px;border-radius:8px;background:var(--chip);min-height:48px}
+.meta{margin-top:6px;font-size:12px;color:var(--sub)}
+.acts{display:flex;flex-direction:column;gap:0}
+.acts button,.acts a{width:44px;height:44px;border:0;border-radius:10px;background:transparent;
+  color:var(--sub);font-size:19px;display:flex;align-items:center;justify-content:center;text-decoration:none}
+.acts button:active,.acts a:active{background:var(--chip)}
+.acts .on{color:var(--pin)}
+.acts .del{color:var(--danger)}
+#empty{text-align:center;color:var(--sub);padding:36px 0}
+#toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);
+  max-width:86vw;padding:11px 18px;border-radius:22px;background:var(--ink);color:var(--bg);
+  font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:30}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#overlay{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.45);display:none;
+  align-items:flex-end;justify-content:center}
+#overlay.show{display:flex}
+.sheet{width:100%;max-width:640px;background:var(--bg);border-radius:20px 20px 0 0;
+  padding:20px 16px calc(20px + env(safe-area-inset-bottom,0px))}
+.sheet h2{margin:0 0 12px;font-size:18px}
+.field{margin-bottom:12px}
+.field label{display:block;margin-bottom:4px;font-size:13px;color:var(--sub)}
+.sheet .row{display:flex;gap:10px;margin-top:6px}
+.sheet .row button{flex:1;min-height:48px;border-radius:12px;font-size:16px;font-weight:700;border:1px solid var(--line);
+  background:var(--card);color:var(--ink)}
+.sheet .row .ok{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.hint{font-size:12px;color:var(--sub);margin:4px 0 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>クリップボード</h1>
+  <div class="hbtn">
+    <button class="icon" id="btnRefresh" aria-label="更新">↻</button>
+    <button class="icon" id="btnSettings" aria-label="設定">⚙︎</button>
+  </div>
+</header>
+
+<main>
+  <button class="primary" id="btnPaste">貼り付けて保存</button>
+
+  <details class="manual">
+    <summary>手入力で保存</summary>
+    <textarea id="manualText" placeholder="保存したい文字を入力"></textarea>
+    <button id="btnManual">保存</button>
+  </details>
+
+  <input type="search" id="search" placeholder="検索">
+
+  <nav id="tabs">
+    <button data-f="all" class="on">すべて</button>
+    <button data-f="pin">ピン留め</button>
+    <button data-f="image">画像</button>
+    <button data-f="url">URL</button>
+    <button data-f="text">テキスト</button>
+  </nav>
+
+  <div id="list"></div>
+  <p id="empty" hidden>まだ何もありません。「貼り付けて保存」を押してください。</p>
+</main>
+
+<div id="overlay">
+  <div class="sheet">
+    <h2>設定</h2>
+    <div class="field">
+      <label for="setUrl">GASのウェブアプリURL</label>
+      <input id="setUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocapitalize="off" autocorrect="off">
+    </div>
+    <div class="field">
+      <label for="setToken">TOKEN</label>
+      <input id="setToken" type="password" placeholder="GASに書いたTOKEN" autocapitalize="off" autocorrect="off">
+      <p class="hint">この端末のブラウザにだけ保存されます。iPhoneとiPadで、それぞれ1回ずつ入力してください。</p>
+    </div>
+    <div class="row">
+      <button id="setCancel">閉じる</button>
+      <button id="setSave" class="ok">保存</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function(){
+  // ホーム画面用アイコンを生成
+  const c = document.createElement('canvas'); c.width = c.height = 180;
+  const x = c.getContext('2d');
+  x.fillStyle = '#0b6e8a'; x.fillRect(0, 0, 180, 180);
+  x.font = '96px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillText('📋', 90, 98);
+  const l = document.createElement('link');
+  l.rel = 'apple-touch-icon'; l.href = c.toDataURL('image/png');
+  document.head.appendChild(l);
+})();
+
+const $ = s => document.querySelector(s);
+const store = {
+  get url(){ return localStorage.getItem('gasUrl') || ''; },
+  get token(){ return localStorage.getItem('gasToken') || ''; }
+};
+const TYPE_LABEL = { image: '画像', url: 'URL', text: 'テキスト' };
+const imgCache = new Map();
+let items = [];
+let filter = 'all';
+let query = '';
+let toastTimer = null;
+
+function toast(msg){
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function ago(ts){
+  const s = (Date.now() - Number(ts)) / 1000;
+  if (s < 60) return 'たった今';
+  if (s < 3600) return Math.floor(s / 60) + '分前';
+  if (s < 86400) return Math.floor(s / 3600) + '時間前';
+  const d = new Date(Number(ts));
+  return (d.getMonth() + 1) + '/' + d.getDate();
+}
+
+/* ---------- 通信 ---------- */
+async function api(method, payload){
+  if (!store.url || !store.token){ openSettings(); throw new Error('設定が必要です'); }
+  let res;
+  if (method === 'GET'){
+    const u = new URL(store.url);
+    u.searchParams.set('token', store.token);
+    Object.entries(payload || {}).forEach(([k, v]) => u.searchParams.set(k, v));
+    res = await fetch(u);
+  } else {
+    res = await fetch(store.url, {
+      method: 'POST',
+      body: JSON.stringify(Object.assign({ token: store.token }, payload))
+    });
+  }
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error || '通信エラー');
+  return data;
+}
+
+function loadImage(id){
+  if (!imgCache.has(id)){
+    imgCache.set(id, api('GET', { action: 'image', id })
+      .then(d => d.dataUrl)
+      .catch(e => { imgCache.delete(id); throw e; }));
+  }
+  return imgCache.get(id);
+}
+
+async function load(silent){
+  try{
+    const d = await api('GET');
+    items = d.items;
+    localStorage.setItem('clipCache', JSON.stringify(items));
+    render();
+  }catch(e){
+    if (!silent) toast('読み込めませんでした: ' + e.message);
+  }
+}
+
+/* ---------- 表示 ---------- */
+function visibleItems(){
+  const q = query.trim().toLowerCase();
+  return items.filter(i => {
+    if (filter === 'pin' && !i.pinned) return false;
+    if ((filter === 'image' || filter === 'url' || filter === 'text') && i.type !== filter) return false;
+    if (q && !String(i.text || '').toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a, b) => (Number(b.pinned) - Number(a.pinned)) || (Number(b.createdAt) - Number(a.createdAt)));
+}
+
+function render(){
+  const list = $('#list');
+  list.textContent = '';
+  const rows = visibleItems();
+  $('#empty').hidden = rows.length > 0;
+  rows.forEach(i => list.appendChild(card(i)));
+}
+
+function card(i){
+  const el = document.createElement('article');
+  el.className = 'card' + (i.pinned ? ' pinned' : '');
+
+  const body = document.createElement('div');
+  body.className = 'body';
+  if (i.type === 'image'){
+    const img = document.createElement('img');
+    img.className = 'thumb'; img.alt = '画像を読み込み中';
+    body.appendChild(img);
+    loadImage(i.fileId).then(u => { img.src = u; img.alt = '保存した画像'; })
+      .catch(() => { img.alt = '画像を読み込めません'; });
+  } else {
+    const p = document.createElement('p');
+    p.className = 'txt' + (i.type === 'url' ? ' url' : '');
+    p.textContent = i.text;
+    body.appendChild(p);
+  }
+  const meta = document.createElement('div');
+  meta.className = 'meta';
+  meta.textContent = TYPE_LABEL[i.type] + '  ' + ago(i.createdAt);
+  body.appendChild(meta);
+  body.addEventListener('click', () => copyItem(i));
+
+  const acts = document.createElement('div');
+  acts.className = 'acts';
+
+  const pin = document.createElement('button');
+  pin.textContent = '📌'; pin.setAttribute('aria-label', 'ピン留め');
+  pin.style.opacity = i.pinned ? '1' : '.35';
+  pin.addEventListener('click', () => togglePin(i));
+  acts.appendChild(pin);
+
+  if (i.type === 'url'){
+    const a = document.createElement('a');
+    a.href = i.text.trim(); a.target = '_blank'; a.rel = 'noopener';
+    a.textContent = '↗'; a.setAttribute('aria-label', '開く');
+    acts.appendChild(a);
+  }
+
+  const del = document.createElement('button');
+  del.className = 'del'; del.textContent = '🗑'; del.setAttribute('aria-label', '削除');
+  del.addEventListener('click', () => removeItem(i));
+  acts.appendChild(del);
+
+  el.appendChild(body);
+  el.appendChild(acts);
+  return el;
+}
+
+/* ---------- 操作 ---------- */
+async function copyItem(i){
+  try{
+    if (i.type === 'image'){
+      const blobPromise = loadImage(i.fileId).then(u => fetch(u)).then(r => r.blob());
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blobPromise })]);
+    } else {
+      await navigator.clipboard.writeText(i.text);
+    }
+    toast('コピーしました');
+  }catch(e){
+    toast('コピーできませんでした');
+  }
+}
+
+async function togglePin(i){
+  const next = !i.pinned;
+  i.pinned = next; render();
+  try{
+    await api('POST', { action: 'pin', id: i.id, pinned: next });
+  }catch(e){
+    i.pinned = !next; render();
+    toast('ピン留めを変更できませんでした');
+  }
+}
+
+async function removeItem(i){
+  if (!confirm('削除しますか？')) return;
+  const backup = items;
+  items = items.filter(x => x.id !== i.id); render();
+  try{
+    await api('POST', { action: 'delete', id: i.id });
+  }catch(e){
+    items = backup; render();
+    toast('削除できませんでした');
+  }
+}
+
+function toPngBase64(blob, max){
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      const s = Math.min(1, max / Math.max(img.width, img.height));
+      const cv = document.createElement('canvas');
+      cv.width = Math.round(img.width * s);
+      cv.height = Math.round(img.height * s);
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      URL.revokeObjectURL(url);
+      resolve(cv.toDataURL('image/png').split(',')[1]);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('画像を読み込めません')); };
+    img.src = url;
+  });
+}
+
+async function saveText(text){
+  await api('POST', { action: 'add', text });
+}
+async function saveImage(blob){
+  const b64 = await toPngBase64(blob, 1600);
+  await api('POST', { action: 'add', imageBase64: b64, mimeType: 'image/png' });
+}
+
+async function pasteSave(){
+  const btn = $('#btnPaste');
+  btn.disabled = true;
+  try{
+    let saved = false;
+    if (navigator.clipboard.read){
+      const clips = await navigator.clipboard.read();
+      for (const ci of clips){
+        const imgType = ci.types.find(t => t.startsWith('image/'));
+        if (imgType){
+          await saveImage(await ci.getType(imgType));
+          saved = true; break;
+        }
+        if (ci.types.includes('text/plain')){
+          const t = await (await ci.getType('text/plain')).text();
+          if (t.trim()){ await saveText(t); saved = true; break; }
+        }
+      }
+    } else {
+      const t = await navigator.clipboard.readText();
+      if (t.trim()){ await saveText(t); saved = true; }
+    }
+    toast(saved ? '保存しました' : 'クリップボードが空です');
+    if (saved) load(true);
+  }catch(e){
+    toast('保存できませんでした: ' + e.message);
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+async function manualSave(){
+  const ta = $('#manualText');
+  const t = ta.value;
+  if (!t.trim()){ toast('文字を入力してください'); return; }
+  try{
+    await saveText(t);
+    ta.value = '';
+    toast('保存しました');
+    load(true);
+  }catch(e){
+    toast('保存できませんでした: ' + e.message);
+  }
+}
+
+/* ---------- 設定 ---------- */
+function openSettings(){
+  $('#setUrl').value = store.url;
+  $('#setToken').value = store.token;
+  $('#overlay').classList.add('show');
+}
+function closeSettings(){ $('#overlay').classList.remove('show'); }
+
+/* ---------- イベント ---------- */
+$('#btnPaste').addEventListener('click', pasteSave);
+$('#btnManual').addEventListener('click', manualSave);
+$('#btnRefresh').addEventListener('click', () => { load(false); });
+$('#btnSettings').addEventListener('click', openSettings);
+$('#setCancel').addEventListener('click', closeSettings);
+$('#setSave').addEventListener('click', () => {
+  localStorage.setItem('gasUrl', $('#setUrl').value.trim());
+  localStorage.setItem('gasToken', $('#setToken').value.trim());
+  closeSettings();
+  toast('設定を保存しました');
+  load(false);
+});
+$('#search').addEventListener('input', e => { query = e.target.value; render(); });
+$('#tabs').addEventListener('click', e => {
+  const b = e.target.closest('button[data-f]');
+  if (!b) return;
+  filter = b.dataset.f;
+  document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b));
+  render();
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && store.url) load(true);
+});
+setInterval(() => {
+  if (document.visibilityState === 'visible' && store.url) load(true);
+}, 30000);
+
+/* ---------- 起動 ---------- */
+try{
+  items = JSON.parse(localStorage.getItem('clipCache') || '[]');
+  render();
+}catch(e){ items = []; }
+if (!store.url || !store.token) openSettings();
+else load(true);
+</script>
+</body>
+</html>
